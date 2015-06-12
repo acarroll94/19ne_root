@@ -1,0 +1,17 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{2857B73E-F847-4B02-9238-064979017E93}") = "RootGraphing", "RootGraphing.cproj", "{E2A1B6D3-073F-4563-B605-C6B22831DBAE}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{E2A1B6D3-073F-4563-B605-C6B22831DBAE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E2A1B6D3-073F-4563-B605-C6B22831DBAE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E2A1B6D3-073F-4563-B605-C6B22831DBAE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E2A1B6D3-073F-4563-B605-C6B22831DBAE}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

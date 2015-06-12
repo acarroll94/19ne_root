@@ -1,0 +1,175 @@
+#include <iostream>
+#include <cstdlib>
+
+#include <string>
+#include <sstream>
+#include <fstream>
+#include <strings.h>
+#include <math.h>
+#include <vector>
+
+#include <map>
+#include <iterator>
+#include <algorithm>
+#include <utility>
+
+#include <TFormula.h>
+#include <TRandom1.h>
+#include <TGraph.h>
+#include <TGraphErrors.h>
+#include <TMath.h>
+#include <TGraphAsymmErrors.h>
+#include <TMultiGraph.h>
+#include <TCanvas.h>
+#include <TH1F.h>
+#include <TApplication.h>
+
+using namespace std;
+#define DATA_FILE "/r_19ne_states/peaks/ne19_peaks_all.dat"
+#define DIVISION_FACTOR 100.0
+
+#define e_rel1 2.54378
+#define width_1 .05303
+
+#define e_rel2 2.75177
+#define width_2 .06424
+
+#define e_rel3 2.8883
+#define width_3 .06424
+
+#define pi 3.141
+
+struct Particle
+{
+    double theta, MeV, counts;
+};
+Double_t total_sum = 0;
+int i = 0;
+Double_t fitf(Double_t *x,Double_t *par);
+
+ int main(int argc, char* argv[]) {
+    TApplication* rootapp = new TApplication("Counts v MeV", &argc, argv);
+    //Create input stream (handles formatted input by default)
+    //Load a dynamic array for both our y and x axis
+    std::vector<Double_t> v_MeV;
+    std::vector<Double_t> v_MeV_err;
+    std::vector<Double_t> v_Counts;
+    std::vector<Double_t> v_Counts_err;
+    
+    v_MeV.reserve(66);    
+    v_MeV_err.reserve(66);
+    v_Counts.reserve(66);
+    v_Counts_err.reserve(66);
+    
+    //Open up our file
+    ifstream fin(DATA_FILE);
+    string str;
+    //Setup our counter variables
+    int theta_current;
+    int ctr = 0;
+    //Loop through our file, line by line
+    while( getline(fin,str) )
+      {      
+        //Allocate a point for that line
+        Particle p;
+        //Read the data and store it in temporary point p
+        sscanf( str.c_str(), "%lf %lf %lf\n", &p.theta, &p.MeV, &p.counts);
+        //Divide to get correct magnitude(if needed)
+        if(DIVISION_FACTOR != 1) { p.MeV /= DIVISION_FACTOR; }
+        //Checks to see if our angle has changed since the last run, this allows us
+        //to keep track of what value we are on
+        if(theta_current != p.theta){
+            ctr = 0;
+        }
+        //Check for the MeV value
+        //Only append to the vector when we are at the first run through
+        if(p.MeV > 1.5 && p.MeV < 4.2){
+            if(p.theta == 0){ 
+                //Append to the vector if we are on our first pass through
+                v_MeV.push_back(p.MeV);
+                v_Counts.push_back(p.counts);
+                cout << p.theta << "," <<  p.MeV << "," << p.counts << "\n";
+            }
+            else{
+                //Since we are past theta=0, we can jus                                    t add to the already
+                //existing count value
+                v_Counts[ctr] += p.counts;
+                cout << p.theta << "," <<  p.MeV << "," << p.counts << "\n";
+                ctr++;
+            }
+        }
+        theta_current = p.theta;        
+    } 
+    //Grab our error vectors
+    for(int i = 0; i < v_Counts.size(); i++){
+        v_Counts_err.push_back(sqrt(v_Counts[i]));
+    }    
+    v_MeV_err.resize(v_Counts_err.size());
+    
+    TGraphErrors *gr = new
+            TGraphErrors(v_MeV.size(), &v_MeV[0], &v_Counts[0], &v_MeV_err[0], &v_Counts_err[0]);
+    //--------------------------------------------------------------------------
+    
+    TCanvas *c1 = new TCanvas("c1","Graph Draw Options",200,10,600,400);
+    //--------------------------------------------------------------------------
+    //Fitting
+    //--------------------------------------------------------------------------
+    Double_t par[9];
+    TF1 *g1 = new TF1("fit1", "gaus", e_rel1-width_1, e_rel1+width_1);
+    TF1 *g2 = new TF1("fit2", "gaus", e_rel2-width_2, e_rel2+width_2);
+    TF1 *g3 = new TF1("fit3", "gaus", e_rel3-width_3, e_rel3+width_3);
+    TF1 *total = new TF1("total", "gaus(0)+gaus(3)+gaus(6)", 2.45,3.1);
+    TH1F *hist = new TH1F("hist", "Histogram Test", v_Counts.size(),1.5,4.2);
+    for(int i = 0; i < v_Counts.size(); i++){
+        hist->Fill(v_MeV[i], v_Counts[i]);
+    } 
+    hist->SetMarkerStyle(20);
+    hist->Draw();
+    
+    
+    
+    //TF1 *customFit = new TF1("custom_fit", fitf, 1.5, 4.5, 2);
+    // set the parameters to the mean and RMS of the histogram
+    //customFit->SetParameters(e_rel1, width_1);
+
+    // give the parameters meaningful names
+    //customFit->SetParNames ("e_rel1","width_1", "Count Vector");
+
+    
+    //gr->Fit("custom_fit", "R");
+    //gr->Fit(g1, "R+NQ");
+    //gr->Fit(g2, "R+NQ");
+    //gr->Fit(g3, "R+NQ");
+    //g1->GetParameters(&par[0]);
+    //g2->GetParameters(&par[3]);
+    //g3->GetParameters(&par[6]);
+    //total->SetParameters(par);
+    //gr->Fit(total,"R+NQ");
+    //--------------------------------------------------------------------------
+    //Get rid of the line
+    gr->SetLineColor(1);
+    gr->SetMarkerColor(1);
+    gr->SetMarkerStyle(7);
+    gr->SetMarkerSize(2);
+    gr->SetTitle("19Ne: MeV v Counts");
+    gr->GetXaxis()->SetTitle("Relative Energy");
+    gr->GetYaxis()->SetTitle("Counts");
+    //gr->Draw("+");
+    rootapp->Run();
+    return 0;
+}
+
+ 
+Double_t fitf(Double_t *x,Double_t *par){
+    Double_t e_relative = par[0];
+    Double_t width = par[1];
+    Double_t area = 5.0;
+    Double_t fitval = (((e_relative-TMath::Power(x[0],2))/
+            (2*TMath::Power(width,2)))/
+            (TMath::Sqrt(2*pi*TMath::Power(width,2))));
+    //cout << x[0] << ":" << fitval <<  "\n";
+    total_sum += par[2];
+    i++;
+    return 15*TMath::Exp(fitval);
+}
+
